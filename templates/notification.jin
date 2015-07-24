@@ -1,0 +1,7 @@
+Red Hat Errata: {{data['advisory']}}
+{%- if data.cvss2 %}
+[{{data['cvss2']}}] {{data['synopsis']}}
+{% else %}
+{{data['synopsis']}}
+{% endif -%}
+{{data['link']}}
