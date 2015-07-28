@@ -22,3 +22,12 @@ class DBNotFound(Exception):
 
     def __str__(self):
         return repr(self.value)
+
+
+class ParseErrataFailed(Exception):
+    """ Raise exception when errata parse fails """
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)

@@ -25,6 +25,8 @@ import threading
 import time
 import configparser
 
+import lib.rhen_exceptions as RHENExceptions
+
 class RHENParser(object):
 
     def __init__(self, cfg, logger, rhen_db, rhen_dbus):
@@ -37,7 +39,7 @@ class RHENParser(object):
 
     def parse_config(self):
         try:
-            cve_base = self.cfg.get('main', 'cve')
+            cve_base = self.cfg.get('main', 'cve_details')
             errata_rss = self.cfg.get('main', 'errata_rss')
             return (cve_base, errata_rss)
         except configparser.Error as err:
@@ -59,8 +61,8 @@ class RHENParser(object):
                 continue
 
             errata = self.parse_errata_content(advisory, errata_item)
-            self.rhen_dbus.notify(errata)
             self.rhen_db.add_errata(errata)
+            self.rhen_dbus.notify(errata)
 
     def load_rss_fead(self):
         try:
@@ -70,6 +72,7 @@ class RHENParser(object):
             return etree.parse(erratas, self.parser)
         except (IOError, etree.XMLSyntaxError) as err:
             self.logger.error("Failed parsing rss feed: %s" % err)
+            raise RHENExceptions.ParseErrataFailed(err)
 
     def parse_errata_advisory(self, title):
         try:

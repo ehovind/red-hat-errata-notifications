@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """
 This file is part of Red Hat Errata Notifications (rhen.py).
 Copyright (C) 2015 Espen Hovind <espehov@ifi.uio.no>
@@ -29,6 +29,7 @@ from lib.rhen_dbus import RHENDbus
 from lib.rhen_db import RHENdb
 from lib.rhen_parser import RHENParser
 from lib.rhen_schedule import RHENSchedule
+import lib.rhen_exceptions as RHENExceptions
 
 class RedHatErrataNotify(object):
     CONFIG = os.getcwd() + '/config/rhen.ini'
@@ -77,13 +78,18 @@ class RedHatErrataNotify(object):
 
     def run(self):
         """
-            Load RSS feed and compare with already seen erratas.
-            If new errata, send notification and store in db.
-            Schedule a new errata check.
+        Load RSS feed and compare with already seen erratas.
+        If new errata, send notification and store in db.
+        Schedule a new errata check.
         """
         self.logger.info("Parsing erratas")
-        self.rhen_parser.parse_errata()
-        self.rhen_schedule.next_check_errata(self.run)
+
+        try:
+            self.rhen_parser.parse_errata()
+        except RHENExceptions.ParseErrataFailed as err:
+            self.logger.error("Failed parsing errata: %s" % err)
+        finally:
+            self.rhen_schedule.next_check_errata(self.run)
 
     def list_erratas(self, category):
         """ List all erratas in category """
