@@ -53,3 +53,9 @@ class RHENSchedule(object):
     @event_id.setter
     def event_id(self, event_id):
         self._event_id = event_id
+
+    def __repr__(self):
+        return "RHENSchedule ({0.cfg!r}, {0.logger!r}, {0.event_id!r})".format(self)
+
+    def __str__(self):
+        return "str({0.cfg!s}, {0.logger!s}, {0.event_id!s})".format(self)
