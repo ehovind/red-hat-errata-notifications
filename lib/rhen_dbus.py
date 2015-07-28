@@ -18,6 +18,7 @@ along with rhen.py.  If not, see <http://www.gnu.org/licenses/>.
 import dbus
 import jinja2
 import configparser
+import time
 
 class RHENDbus(object):
     def __init__(self, cfg, logger):
@@ -45,8 +46,18 @@ class RHENDbus(object):
             self.logger.error("Failed dbus setup: %s" % err)
 
     def notify(self, errata):
+        # Construct notfication message (summary + message)
         message = self.construct_message(errata)
-        self.send(message.splitlines()[0], '\r'.join(message.splitlines()[1:]))
+        summary = message.splitlines()[0]
+        description = '\r'.join(message.splitlines()[1:])
+
+        # Require user to acknowledge Security Advisories
+        if 'cvss2' in errata.keys():
+            hints = {'urgency': 2}
+            actions = ['0', 'Acknowledge']
+            self.send(summary, description, actions, hints)
+        else:
+            self.send(summary, description)
 
     def construct_message(self, data):
         try:
@@ -56,7 +67,7 @@ class RHENDbus(object):
         except jinja2.TemplateError as err:
             self.logger.error("Failed constructing message: %s" % err)
 
-    def send(self, summary, description):
+    def send(self, summary, description, actions=[], hints={}):
         """
         Method signature: https://developer.gnome.org/notification-spec/
         """
@@ -64,6 +75,8 @@ class RHENDbus(object):
             self.notifier.Notify(self.cfg.get('dbus', 'app_name'), 0,
                                  self.cfg.get('dbus', 'app_icon'),
                                  summary, description,
-                                 '', '', self.cfg.getint('dbus', 'timeout'))
+                                 actions, hints, self.cfg.getint('dbus', 'timeout'))
+            # throttle notifications
+            time.sleep(2)
         except dbus.exceptions.DBusException as err:
             self.logger.error("Failed sending notification: %s" % err)
